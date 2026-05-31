@@ -417,8 +417,9 @@ function encodeDeck() {
 
 function decodeDeck(code) {
   try {
-    // Restore standard base64 from base64url
-    const b64 = code.trim().replace(/-/g, '+').replace(/_/g, '/');
+    // Restore standard base64 from base64url, add back stripped padding
+    const s = code.trim().replace(/-/g, '+').replace(/_/g, '/');
+    const b64 = s + '='.repeat((4 - s.length % 4) % 4);
     const binary = atob(b64);
     const ids = [];
     let bits = 0, nbits = 0;
