@@ -19,6 +19,7 @@ body { font-family: system-ui, sans-serif; font-size: 13px; color: #1a1a1a; back
 .btn-sm { padding: 3px 9px; font-size: 11px; background: #fff; color: #444; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
 .btn-sm:hover { background: #f0f0f0; }
 .filters-grid { display: flex; flex-wrap: wrap; gap: 5px 18px; }
+.filters-toggle { display: none; }
 .filter-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #333; cursor: pointer; white-space: nowrap; user-select: none; }
 .filter-item input { width: 13px; height: 13px; cursor: pointer; accent-color: #0C447C; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -62,13 +63,17 @@ mark { background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px; 
   /* Toolbar */
   .toolbar { gap: 8px; padding-bottom: 10px; margin-bottom: 10px; }
   .toolbar img { height: 44px !important; }
-  .btn-pdf, .card-back-label { display: none !important; }
+  .btn-pdf { font-size: 14px; padding: 8px 14px; }
+  .card-back-label { font-size: 14px !important; }
   .tab { font-size: 15px; padding: 8px 14px; }
 
   /* Filters */
   .filters { padding: 10px 12px; }
   .filters-title { font-size: 13px; }
   .btn-sm { font-size: 13px; padding: 5px 12px; }
+  .filters-toggle { display: inline-block; margin-left: auto; }
+  #filters-grid { display: none; margin-top: 8px; }
+  #filters-grid.open { display: flex; }
   .filter-item { font-size: 14px; gap: 7px; }
   .filter-item input { width: 17px; height: 17px; }
 
@@ -216,6 +221,7 @@ mark { background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px; 
     <span class="filters-title">Show restrictions</span>
     <button class="btn-sm" onclick="setAllFilters(true)">All</button>
     <button class="btn-sm" onclick="setAllFilters(false)">None</button>
+    <button class="btn-sm filters-toggle" id="filters-toggle" onclick="toggleFilters()">▼ Expand</button>
   </div>
   <div class="filters-grid" id="filters-grid"></div>
 </div>
@@ -324,6 +330,13 @@ function init() {
   buildSelected();
   restoreDeckName();
   renderDecks();
+}
+
+function toggleFilters() {
+  const grid = document.getElementById('filters-grid');
+  const btn = document.getElementById('filters-toggle');
+  const open = grid.classList.toggle('open');
+  btn.textContent = open ? '▲ Collapse' : '▼ Expand';
 }
 
 function setAllFilters(on) {
