@@ -688,8 +688,14 @@ function doPrint(sel, bgUrl, backUrl) {
   container.innerHTML = pagesHTML;
   document.body.appendChild(container);
 
+  function cleanup() {
+    container.remove();
+    window.removeEventListener('afterprint', cleanup);
+  }
+  window.addEventListener('afterprint', cleanup);
   window.print();
-  container.remove();
+  // Fallback: some mobile browsers never fire afterprint
+  setTimeout(cleanup, 60000);
 }
 </script>
 </body>
