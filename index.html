@@ -62,6 +62,12 @@ mark { background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px; 
   @page { size: letter; margin: 0.3in; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.pc-page {
+  break-after: page;
+}
+.pc-page:last-child {
+  break-after: auto;
+}
 .pc-grid {
   display: grid;
   grid-template-columns: repeat(3, 2.5in);
@@ -562,8 +568,12 @@ function doPrint(sel, bgUrl, backUrl) {
     ? `background-image: url('${bgUrl}'); background-size: 100% 100%; background-repeat: no-repeat;`
     : 'border: 1px solid #555; border-radius: 6px; background: #d0ccc4;';
 
-  const frontHTML = sel.map(c => `
-    <div class="pc-card" style="${bgCss}">
+  const backCss = backUrl
+    ? `background-image: url('${backUrl}'); background-size: 100% 100%; background-repeat: no-repeat;`
+    : '';
+
+  function frontCard(c) {
+    return `<div class="pc-card" style="${bgCss}">
       <div class="pc-title">${c.name}</div>
       <div class="pc-body">
         <div class="pc-conditions">${c.conditions}</div>
@@ -571,25 +581,30 @@ function doPrint(sel, bgUrl, backUrl) {
         <div class="pc-effect">${c.effect}</div>
       </div>
       <div class="pc-source">${c.source}</div>
-    </div>
-  `).join('');
+    </div>`;
+  }
 
-  const backCss = backUrl
-    ? `background-image: url('${backUrl}'); background-size: 100% 100%; background-repeat: no-repeat;`
-    : 'border: 1px solid #555; border-radius: 6px; background: #d0ccc4;';
+  function backCard() {
+    return `<div class="pc-card" style="${backCss}"></div>`;
+  }
 
-  const backHTML = backUrl
-    ? sel.map(() => `<div class="pc-card" style="${backCss}"></div>`).join('')
-    : '';
-
-  const cardHTML = frontHTML + backHTML;
+  // Split into pages of 9 (3 cols × 3 rows), interleave back pages
+  const PER_PAGE = 9;
+  let pagesHTML = '';
+  for (let i = 0; i < sel.length; i += PER_PAGE) {
+    const chunk = sel.slice(i, i + PER_PAGE);
+    pagesHTML += `<div class="pc-page"><div class="pc-grid">${chunk.map(frontCard).join('')}</div></div>`;
+    if (backUrl) {
+      pagesHTML += `<div class="pc-page"><div class="pc-grid">${chunk.map(backCard).join('')}</div></div>`;
+    }
+  }
 
   const old = document.getElementById('print-container');
   if (old) old.remove();
 
   const container = document.createElement('div');
   container.id = 'print-container';
-  container.innerHTML = `<div class="pc-grid">${cardHTML}</div>`;
+  container.innerHTML = pagesHTML;
   document.body.appendChild(container);
 
   window.print();
