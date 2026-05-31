@@ -54,6 +54,42 @@ input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color:
 .search-clear:hover { color: #555; }
 mark { background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px; }
 
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  body { padding: 10px; }
+  .toolbar img { height: 48px !important; }
+  .btn-pdf, .card-back-label { display: none !important; }
+  /* Filters */
+  .filters { padding: 8px 10px; }
+  /* Decks */
+  .decks { padding: 8px 10px; }
+  /* Table → card list */
+  thead { display: none; }
+  table { font-size: 13px; }
+  tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding: 10px 6px;
+    border-bottom: 1px solid #ebebeb;
+    gap: 0;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td { border-bottom: none; padding: 0; vertical-align: baseline; }
+  /* Checkbox */
+  tbody tr td:nth-child(1) { flex: 0 0 auto; padding-right: 8px; padding-top: 2px; }
+  /* Name */
+  tbody tr td:nth-child(2) { flex: 1; font-size: 13px; font-weight: 600; min-width: 0; padding-right: 6px; }
+  /* Restriction */
+  tbody tr td:nth-child(3) { flex: 0 0 auto; }
+  /* Conditions – full-width row, indented */
+  tbody tr td:nth-child(4) { flex: 0 0 100%; padding-left: 22px; padding-top: 4px; font-size: 11px; color: #666; }
+  /* Effect – full-width row, indented */
+  tbody tr td:nth-child(5) { flex: 0 0 100%; padding-left: 22px; padding-top: 2px; font-size: 12px; }
+  /* Source – hidden on mobile */
+  tbody tr td:nth-child(6) { display: none; }
+}
+
 /* ── Print styles ─────────────────────────────────────────────────────────── */
 #print-container { display: none; }
 @media print {
@@ -137,7 +173,7 @@ mark { background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px; 
       <button class="tab" id="selected-tab" onclick="showTab('selected',this)">Selected (0)</button>
     </div>
     <button class="btn-pdf" id="pdf-btn" onclick="exportPDF()" disabled>Print Deck</button>
-    <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:#444; cursor:pointer;">
+    <label class="card-back-label" style="display:flex; align-items:center; gap:5px; font-size:12px; color:#444; cursor:pointer;">
       <input type="checkbox" id="include-card-back"> Include card back
     </label>
   </div>
