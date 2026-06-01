@@ -127,20 +127,23 @@ mark { background: #fff176; color: inherit; border-radius: 2px; padding: 0 1px; 
   tbody tr td:nth-child(6) { display: none; }
 }
 
-/* ── Print styles ─────────────────────────────────────────────────────────── */
+/* ── Print styles (inline) ────────────────────────────────────────────────── */
 #print-container { display: none; }
 @media print {
   body > *:not(#print-container) { display: none !important; }
   #print-container { display: block; }
-  @page { size: letter; margin: 0.3in; }
+}
+</style>
+
+<style id="print-styles">
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #fff; }
+@page { size: letter; margin: 0.3in; }
+@media print {
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
-.pc-page {
-  break-after: page;
-}
-.pc-page:last-child {
-  break-after: auto;
-}
+.pc-page { break-after: page; }
+.pc-page:last-child { break-after: auto; }
 .pc-grid {
   display: grid;
   grid-template-columns: repeat(3, 2.5in);
@@ -643,23 +646,33 @@ function exportPDF() {
   const bgUrl = new URL('images/CardBackground.png', document.baseURI).href;
   const backUrl = new URL('images/CardBack.png', document.baseURI).href;
   const includeBack = document.getElementById('include-card-back').checked;
+  const isMobile = window.matchMedia('(max-width: 860px)').matches;
+
+  // Open the window NOW (synchronous user-gesture) before any async work
+  const win = isMobile ? window.open('', '_blank') : null;
+  if (isMobile && !win) { alert('Please allow popups in your browser to print.'); return; }
 
   const toLoad = [imgToDataUrl(bgUrl)];
   if (includeBack) toLoad.push(imgToDataUrl(backUrl));
 
   Promise.all(toLoad).then(function(dataUrls) {
-    doPrint(sel, dataUrls[0], includeBack ? dataUrls[1] : null);
+    const bg  = dataUrls[0];
+    const bk  = includeBack ? dataUrls[1] : null;
+    if (isMobile) {
+      doPrintWindow(win, sel, bg, bk);
+    } else {
+      doPrint(sel, bg, bk);
+    }
   });
 }
 
-function doPrint(sel, bgUrl, backUrl) {
+function buildPagesHTML(sel, bgUrl, backUrl) {
   const bgCss = bgUrl
-    ? `background-image: url('${bgUrl}'); background-size: 100% 100%; background-repeat: no-repeat;`
-    : 'border: 1px solid #555; border-radius: 6px; background: #d0ccc4;';
-
+    ? `background-image:url('${bgUrl}');background-size:100% 100%;background-repeat:no-repeat;`
+    : 'border:1px solid #555;border-radius:6px;background:#d0ccc4;';
   const backCss = backUrl
-    ? `background-image: url('${backUrl}'); background-size: 100% 100%; background-repeat: no-repeat;`
-    : '';
+    ? `background-image:url('${backUrl}');background-size:100% 100%;background-repeat:no-repeat;`
+    : 'border:1px solid #555;border-radius:6px;background:#d0ccc4;';
 
   function frontCard(c) {
     return `<div class="pc-card" style="${bgCss}">
@@ -673,20 +686,23 @@ function doPrint(sel, bgUrl, backUrl) {
     </div>`;
   }
 
-  function backCard() {
-    return `<div class="pc-card" style="${backCss}"></div>`;
-  }
-
-  // Split into pages of 9 (3 cols × 3 rows), interleave back pages
   const PER_PAGE = 9;
-  let pagesHTML = '';
+  let html = '';
   for (let i = 0; i < sel.length; i += PER_PAGE) {
     const chunk = sel.slice(i, i + PER_PAGE);
-    pagesHTML += `<div class="pc-page"><div class="pc-grid">${chunk.map(frontCard).join('')}</div></div>`;
+    html += `<div class="pc-page"><div class="pc-grid">${chunk.map(frontCard).join('')}</div></div>`;
     if (backUrl) {
-      pagesHTML += `<div class="pc-page"><div class="pc-grid">${chunk.map(backCard).join('')}</div></div>`;
+      const backs = chunk.map(function() {
+        return `<div class="pc-card" style="${backCss}"></div>`;
+      }).join('');
+      html += `<div class="pc-page"><div class="pc-grid">${backs}</div></div>`;
     }
   }
+  return html;
+}
+
+function doPrint(sel, bgUrl, backUrl) {
+  const pagesHTML = buildPagesHTML(sel, bgUrl, backUrl);
 
   const old = document.getElementById('print-container');
   if (old) old.remove();
@@ -701,14 +717,26 @@ function doPrint(sel, bgUrl, backUrl) {
     window.removeEventListener('afterprint', cleanup);
   }
   window.addEventListener('afterprint', cleanup);
-  setTimeout(cleanup, 60000); // fallback if afterprint never fires
+  setTimeout(cleanup, 60000);
 
-  // Wait for two paint frames so the browser fully renders before printing
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
       window.print();
     });
   });
+}
+
+function doPrintWindow(win, sel, bgUrl, backUrl) {
+  const pagesHTML = buildPagesHTML(sel, bgUrl, backUrl);
+  const printCSS = document.getElementById('print-styles').textContent;
+
+  win.document.write(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Necromunda Tactics – Print</title>
+<style>${printCSS}</style>
+</head><body>${pagesHTML}</body></html>`);
+  win.document.close();
 }
 </script>
 </body>
