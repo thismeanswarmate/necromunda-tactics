@@ -618,6 +618,24 @@ function applySearch() {
 }
 
 // ── PRINT ───────────────────────────────────────────────────────────────────
+function imgToDataUrl(url) {
+  return new Promise(function(resolve) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL());
+      } catch(e) { resolve(url); } // fall back to URL if canvas fails
+    };
+    img.onerror = function() { resolve(url); };
+    img.src = url;
+  });
+}
+
 function exportPDF() {
   const sel = [...selected].map(id => cards[id]);
   if (!sel.length) return;
@@ -626,22 +644,12 @@ function exportPDF() {
   const backUrl = new URL('images/CardBack.png', document.baseURI).href;
   const includeBack = document.getElementById('include-card-back').checked;
 
-  // Preload background image (and card back if needed) before printing
-  let loaded = 0;
-  const total = includeBack ? 2 : 1;
-  function onLoad() { if (++loaded === total) doPrint(sel, bgUrl, includeBack ? backUrl : null); }
+  const toLoad = [imgToDataUrl(bgUrl)];
+  if (includeBack) toLoad.push(imgToDataUrl(backUrl));
 
-  const img = new Image();
-  img.onload = onLoad;
-  img.onerror = onLoad;
-  img.src = bgUrl;
-
-  if (includeBack) {
-    const img2 = new Image();
-    img2.onload = onLoad;
-    img2.onerror = onLoad;
-    img2.src = backUrl;
-  }
+  Promise.all(toLoad).then(function(dataUrls) {
+    doPrint(sel, dataUrls[0], includeBack ? dataUrls[1] : null);
+  });
 }
 
 function doPrint(sel, bgUrl, backUrl) {
@@ -693,9 +701,14 @@ function doPrint(sel, bgUrl, backUrl) {
     window.removeEventListener('afterprint', cleanup);
   }
   window.addEventListener('afterprint', cleanup);
-  window.print();
-  // Fallback: some mobile browsers never fire afterprint
-  setTimeout(cleanup, 60000);
+  setTimeout(cleanup, 60000); // fallback if afterprint never fires
+
+  // Wait for two paint frames so the browser fully renders before printing
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      window.print();
+    });
+  });
 }
 </script>
 </body>
