@@ -214,7 +214,7 @@ body { background: #fff; }
     </div>
     <button class="btn-pdf" id="pdf-btn" onclick="exportPDF()" disabled>Print Deck</button>
     <label class="card-back-label" style="display:flex; align-items:center; gap:5px; font-size:12px; color:#444; cursor:pointer;">
-      <input type="checkbox" id="include-card-back"> Include card back
+      <input type="checkbox" id="include-card-back" onchange="localStorage.setItem('nm_cardback',this.checked)"> Include card back
     </label>
   </div>
 </div>
@@ -332,6 +332,7 @@ function init() {
   buildAll();
   buildSelected();
   restoreDeckName();
+  restoreCardBack();
   renderDecks();
 }
 
@@ -433,6 +434,13 @@ function autoRestore() {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_AUTO) || '[]');
     saved.forEach(id => { if (cards[id]) selected.add(id); });
+  } catch(e) {}
+}
+
+function restoreCardBack() {
+  try {
+    const val = localStorage.getItem('nm_cardback');
+    if (val !== null) document.getElementById('include-card-back').checked = val === 'true';
   } catch(e) {}
 }
 
