@@ -743,7 +743,9 @@ function doPrintWindow(win, sel, bgUrl, backUrl) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Necromunda Tactics – Print</title>
 <style>${printCSS}</style>
-</head><body>${pagesHTML}</body></html>`);
+</head><body>${pagesHTML}
+<script>window.onload = function() { window.print(); };<\/script>
+</body></html>`);
   win.document.close();
 }
 </script>
